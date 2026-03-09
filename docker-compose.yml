@@ -7,7 +7,7 @@ services:
     build:
       context: ./backend
     ports:
-      - "5000:5000"
+      - "5000:3000"
     restart: always
     environment:
       - NODE_ENV=production
