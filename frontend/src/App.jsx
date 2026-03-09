@@ -1,22 +1,18 @@
-import { useEffect, useState } from 'react';
-import './App.css';
+import React, { useState, useEffect } from "react";
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
-function App() {
-  const [message, setMessage] = useState('');
+// Auth Pages (no layout)
+import Register from "./pages/Register";
 
-  useEffect(() => {
-    fetch('http://localhost:5000/api/hello')
-      .then(res => res.json())
-      .then(data => setMessage(data.message))
-      .catch(err => setMessage('Error connecting to backend'));
-  }, []);
 
+export default function App() {
+  
   return (
-    <div className="App">
-      <h1>My React + Node App</h1>
-      <p>{message}</p>
-    </div>
+    <Router>
+      <Routes>
+        {/* Public / Auth Routes (No Layout) */}
+        <Route path="/" element={<Register />} />
+      </Routes>       
+    </Router>
   );
 }
-
-export default App;
