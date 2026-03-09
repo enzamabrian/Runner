@@ -55,8 +55,7 @@ jobs:
         run: |
           DEPLOY_DIR="/home/github-runner/apps"
           mkdir -p $DEPLOY_DIR
-          rsync -av --delete $GITHUB_WORKSPACE/backend/ $DEPLOY_DIR/backend/
-          rsync -av --delete $GITHUB_WORKSPACE/frontend/ $DEPLOY_DIR/frontend/
+          rsync -av --delete $GITHUB_WORKSPACE/ $DEPLOY_DIR/
 
       # Deploy Backend with Docker
       - name: Deploy Backend Docker
