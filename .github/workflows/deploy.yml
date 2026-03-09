@@ -10,7 +10,7 @@ jobs:
 
     steps:
 
-      # Clean previous repo state (important for self-hosted runners)
+      # Clean previous repo state on runner
       - name: Clean Workspace
         run: |
           echo "Cleaning workspace..."
@@ -31,100 +31,54 @@ jobs:
           echo "Latest commit deployed:"
           git log -1
 
-      # Backup backend
-      - name: Backup Backend
+      # Backup existing Docker apps
+      - name: Backup Apps
         run: |
-          REPO_DIR="/var/www/app"
-          BACKEND_DIR="$REPO_DIR/backend"
-          BACKUP_DIR="/var/www/backups/app"
+          DEPLOY_DIR="/home/github-runner/apps"
+          BACKUP_DIR="/home/github-runner/backups"
           TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
 
           mkdir -p $BACKUP_DIR
 
-          echo "==== Backing up backend ===="
-          BACKEND_BACKUP="$BACKUP_DIR/backend_$TIMESTAMP"
+          for APP in backend frontend; do
+            SRC="$DEPLOY_DIR/$APP"
+            if [ -d "$SRC" ]; then
+              cp -r "$SRC" "$BACKUP_DIR/${APP}_$TIMESTAMP"
+              echo "✅ Backed up $APP to $BACKUP_DIR/${APP}_$TIMESTAMP"
+            else
+              echo "⚠️ $APP folder not found, skipping backup"
+            fi
+          done
 
-          if [ -d "$BACKEND_DIR" ]; then
-            cp -r $BACKEND_DIR $BACKEND_BACKUP
-            echo "✅ Backend backed up at $BACKEND_BACKUP"
-          else
-            echo "⚠️ Backend folder not found, skipping backup"
-          fi
-
-      # Sync new code to VPS
-      - name: Sync Latest Code to Server
+      # Sync latest code to VPS apps folder
+      - name: Sync Code to Apps Folder
         run: |
-          echo "Syncing repository to /var/www/app..."
-          rsync -av --delete $GITHUB_WORKSPACE/ /var/www/app/
+          DEPLOY_DIR="/home/github-runner/apps"
+          mkdir -p $DEPLOY_DIR
+          rsync -av --delete $GITHUB_WORKSPACE/backend/ $DEPLOY_DIR/backend/
+          rsync -av --delete $GITHUB_WORKSPACE/frontend/ $DEPLOY_DIR/frontend/
 
-      # Install frontend packages
-      - name: Install Frontend Packages
+      # Deploy Backend with Docker
+      - name: Deploy Backend Docker
         run: |
-          cd /var/www/app/frontend
-          echo "Installing frontend packages..."
-          npm ci
+          DEPLOY_DIR="/home/github-runner/apps/backend"
+          cd $DEPLOY_DIR
+          echo "Building and starting backend container..."
+          docker compose down
+          docker compose build
+          docker compose up -d
+          echo "✅ Backend Docker deployed"
 
-      # Build frontend
-      - name: Build Frontend
+      # Deploy Frontend with Docker
+      - name: Deploy Frontend Docker
         run: |
-          cd /var/www/app/frontend
-          echo "Building frontend..."
-          npm run build
+          DEPLOY_DIR="/home/github-runner/apps/frontend"
+          cd $DEPLOY_DIR
+          echo "Building and starting frontend container..."
+          docker compose down
+          docker compose build
+          docker compose up -d
+          echo "✅ Frontend Docker deployed"
 
-      # Install backend packages
-      - name: Install Backend Packages
-        run: |
-          cd /var/www/app/backend
-          echo "Installing backend packages..."
-          npm ci
-
-      # Restore .env and uploads
-      - name: Restore Backend .env and Uploads
-        run: |
-          REPO_DIR="/var/www/app"
-          BACKUP_DIR="/var/www/backups/app"
-
-          echo "Current user: $(whoami)"
-
-          LATEST_BACKUP=$(ls -td $BACKUP_DIR/backend_* 2>/dev/null | head -1)
-
-          if [ -z "$LATEST_BACKUP" ]; then
-            echo "⚠️ No backup found"
-            exit 0
-          fi
-
-          echo "Latest backup: $LATEST_BACKUP"
-
-          # Restore .env
-          if [ -f "$LATEST_BACKUP/.env" ]; then
-            cp "$LATEST_BACKUP/.env" "$REPO_DIR/backend/.env"
-            echo "✅ Restored .env"
-          fi
-
-          # Restore uploads
-          if [ -d "$LATEST_BACKUP/uploads" ]; then
-            mkdir -p "$REPO_DIR/backend/uploads"
-            cp -r "$LATEST_BACKUP/uploads/." "$REPO_DIR/backend/uploads/"
-            chmod -R 775 "$REPO_DIR/backend/uploads"
-            echo "✅ Uploads restored"
-          fi
-
-      # Restart backend
-      - name: Restart Backend
-        run: |
-          cd /var/www/app/backend
-
-          echo "==== Restarting Backend with PM2 ===="
-
-          if pm2 list | grep -q "backend-app"; then
-            pm2 restart backend-app
-            echo "✅ Backend restarted"
-          else
-            pm2 start index.js --name backend-app
-            pm2 save
-            echo "✅ Backend started"
-          fi
-
-      
       - name: Deployment Completed
-        run: echo "🎉 VPS Deployment completed successfully!"
+        run: echo "🎉 VPS Deployment completed successfully!" explain this line by line
