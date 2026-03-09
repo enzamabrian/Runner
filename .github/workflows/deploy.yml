@@ -1,0 +1,130 @@
+name: VPS Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: self-hosted
+
+    steps:
+
+      # Clean previous repo state (important for self-hosted runners)
+      - name: Clean Workspace
+        run: |
+          echo "Cleaning workspace..."
+          git reset --hard || true
+          git clean -fd || true
+
+      # Checkout latest code
+      - name: Checkout Code
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+          clean: true
+
+      # Show latest commit (debug)
+      - name: Show Latest Commit
+        run: |
+          echo "Latest commit deployed:"
+          git log -1
+
+      # Backup backend
+      - name: Backup Backend
+        run: |
+          REPO_DIR="/var/www/app"
+          BACKEND_DIR="$REPO_DIR/backend"
+          BACKUP_DIR="/var/www/backups/app"
+          TIMESTAMP=$(date +"%Y%m%d_%H%M%S")
+
+          mkdir -p $BACKUP_DIR
+
+          echo "==== Backing up backend ===="
+          BACKEND_BACKUP="$BACKUP_DIR/backend_$TIMESTAMP"
+
+          if [ -d "$BACKEND_DIR" ]; then
+            cp -r $BACKEND_DIR $BACKEND_BACKUP
+            echo "✅ Backend backed up at $BACKEND_BACKUP"
+          else
+            echo "⚠️ Backend folder not found, skipping backup"
+          fi
+
+      # Sync new code to VPS
+      - name: Sync Latest Code to Server
+        run: |
+          echo "Syncing repository to /var/www/app..."
+          rsync -av --delete $GITHUB_WORKSPACE/ /var/www/app/
+
+      # Install frontend packages
+      - name: Install Frontend Packages
+        run: |
+          cd /var/www/app/frontend
+          echo "Installing frontend packages..."
+          npm ci
+
+      # Build frontend
+      - name: Build Frontend
+        run: |
+          cd /var/www/app/frontend
+          echo "Building frontend..."
+          npm run build
+
+      # Install backend packages
+      - name: Install Backend Packages
+        run: |
+          cd /var/www/app/backend
+          echo "Installing backend packages..."
+          npm ci
+
+      # Restore .env and uploads
+      - name: Restore Backend .env and Uploads
+        run: |
+          REPO_DIR="/var/www/app"
+          BACKUP_DIR="/var/www/backups/app"
+
+          echo "Current user: $(whoami)"
+
+          LATEST_BACKUP=$(ls -td $BACKUP_DIR/backend_* 2>/dev/null | head -1)
+
+          if [ -z "$LATEST_BACKUP" ]; then
+            echo "⚠️ No backup found"
+            exit 0
+          fi
+
+          echo "Latest backup: $LATEST_BACKUP"
+
+          # Restore .env
+          if [ -f "$LATEST_BACKUP/.env" ]; then
+            cp "$LATEST_BACKUP/.env" "$REPO_DIR/backend/.env"
+            echo "✅ Restored .env"
+          fi
+
+          # Restore uploads
+          if [ -d "$LATEST_BACKUP/uploads" ]; then
+            mkdir -p "$REPO_DIR/backend/uploads"
+            cp -r "$LATEST_BACKUP/uploads/." "$REPO_DIR/backend/uploads/"
+            chmod -R 775 "$REPO_DIR/backend/uploads"
+            echo "✅ Uploads restored"
+          fi
+
+      # Restart backend
+      - name: Restart Backend
+        run: |
+          cd /var/www/app/backend
+
+          echo "==== Restarting Backend with PM2 ===="
+
+          if pm2 list | grep -q "backend-app"; then
+            pm2 restart backend-app
+            echo "✅ Backend restarted"
+          else
+            pm2 start index.js --name backend-app
+            pm2 save
+            echo "✅ Backend started"
+          fi
+
+      
+      - name: Deployment Completed
+        run: echo "🎉 VPS Deployment completed successfully!"
