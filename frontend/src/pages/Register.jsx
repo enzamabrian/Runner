@@ -121,7 +121,7 @@ function Register() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-blue-600 text-white py-2 hover:bg-blue-700 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`w-full bg-green-600 text-white py-2 hover:bg-blue-700 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {loading ? (editId ? "Updating..." : "Creating...") : (editId ? "Update User" : "Create Account")}
           </button>
