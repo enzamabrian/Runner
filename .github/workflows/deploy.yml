@@ -57,6 +57,18 @@ jobs:
           mkdir -p $DEPLOY_DIR
           rsync -av --delete $GITHUB_WORKSPACE/ $DEPLOY_DIR/
 
+      # Create .env file for Docker services
+      - name: Create Environment File
+        run: |
+          DEPLOY_DIR="/home/github-runner/apps"
+          cat <<EOF > $DEPLOY_DIR/.env
+          MYSQL_ROOT_PASSWORD=${{ secrets.MYSQL_ROOT_PASSWORD }}
+          MYSQL_DATABASE=${{ secrets.MYSQL_DATABASE }}
+          MYSQL_USER=${{ secrets.MYSQL_USER }}
+          MYSQL_PASSWORD=${{ secrets.MYSQL_PASSWORD }}
+          EOF
+          echo "✅ .env file created"
+          
       # Deploy Backend with Docker
       - name: Deploy Backend Docker
         run: |
