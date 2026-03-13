@@ -47,7 +47,7 @@ services:
       - app-network
 
 volumes:
-  mysql_data:
+  apps_mysql_data:
 
 networks:
   app-network:
