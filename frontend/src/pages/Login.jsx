@@ -74,7 +74,7 @@ function Login() {
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 ${
+            className={`w-full bg-red-600 text-white py-2 rounded hover:bg-green-700 ${
               loading ? "opacity-50 cursor-not-allowed" : ""
             }`}
           >
