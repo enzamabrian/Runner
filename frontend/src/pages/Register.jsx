@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import api from "../api/api";
 import toast from "react-hot-toast";
 
@@ -6,177 +6,197 @@ function Register() {
   const [formData, setFormData] = useState({
     name: "",
     email: "",
-    password: ""
+    password: "",
+    dob: "",
+    gender: "",
+    grade: "",
+    phone: "",
+    guardian: "",
+    address: ""
   });
-
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editId, setEditId] = useState(null); // Track user being edited
-
-  // Fetch users
-  const fetchUsers = async () => {
-    try {
-      const response = await api.get("/users");
-      setUsers(response.data);
-    } catch (error) {
-      toast.error("Failed to fetch users");
-    }
-  };
-
-  useEffect(() => {
-    fetchUsers();
-  }, []);
 
   const handleChange = (e) => {
-    setFormData({
-      ...formData,
-      [e.target.name]: e.target.value
-    });
+    setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  // Submit new or updated user
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
     try {
-      if (editId) {
-        // UPDATE
-        const response = await api.put(`/users/${editId}`, formData);
-        toast.success(response.data.message);
-        setEditId(null);
-      } else {
-        // CREATE
-        const response = await api.post("/register", formData);
-        toast.success(response.data.message);
-      }
-
-      setFormData({ name: "", email: "", password: "" });
-      fetchUsers(); // Refresh table
-
+      const response = await api.post("/register", formData);
+      toast.success(response.data.message);
+      setFormData({
+        name: "",
+        email: "",
+        password: "",
+        dob: "",
+        gender: "",
+        grade: "",
+        phone: "",
+        guardian: "",
+        address: ""
+      });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Operation failed");
+      toast.error(error.response?.data?.message || "Registration failed");
     } finally {
       setLoading(false);
     }
   };
 
-  // Load user into form for editing
-  const handleEdit = (user) => {
-    setFormData({ name: user.name, email: user.email, password: "" });
-    setEditId(user.id);
-    window.scrollTo({ top: 0, behavior: "smooth" }); // Scroll to form
-  };
-
-  // Delete user
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
-    try {
-      const response = await api.delete(`/users/${id}`);
-      toast.success(response.data.message);
-      fetchUsers();
-    } catch (error) {
-      toast.error(error.response?.data?.message || "Delete failed");
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col items-center justify-start bg-gray-100 py-10">
-
-      {/* Registration Form */}
-      <div className="bg-white p-8 w-96 border border-gray-300 mb-10">
-        <h2 className="text-2xl font-bold mb-6 text-center">
-          {editId ? "Edit User" : "Register"}
-        </h2>
+    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
+      <div className="bg-white w-full max-w-3xl p-8 rounded-lg shadow-md border border-gray-300">
+        <h2 className="text-2xl font-bold mb-6 text-center">Student Registration</h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Row 1: Name + Email */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Full Name</label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Full Name"
+                required
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Email</label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Email"
+                required
+              />
+            </div>
+          </div>
 
-          <input
-            type="text"
-            name="name"
-            placeholder="Full Name"
-            value={formData.name}
-            onChange={handleChange}
-            className="w-full border p-2"
-          />
+          {/* Row 2: Password + DOB */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Password</label>
+              <input
+                type="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Password"
+                required
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Date of Birth</label>
+              <input
+                type="date"
+                name="dob"
+                value={formData.dob}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              />
+            </div>
+          </div>
 
-          <input
-            type="email"
-            name="email"
-            placeholder="Email"
-            value={formData.email}
-            onChange={handleChange}
-            className="w-full border p-2"
-          />
+          {/* Row 3: Gender + Grade */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Gender</label>
+              <select
+                name="gender"
+                value={formData.gender}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                required
+              >
+                <option value="">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
+            </div>
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Class / Grade</label>
+              <input
+                type="text"
+                name="grade"
+                value={formData.grade}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Grade / Class"
+                required
+              />
+            </div>
+          </div>
 
-          <input
-            type="password"
-            name="password"
-            placeholder={editId ? "New Password (optional)" : "Password"}
-            value={formData.password}
-            onChange={handleChange}
-            className="w-full border p-2"
-          />
+          {/* Row 4: Phone + Guardian */}
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Phone Number</label>
+              <input
+                type="tel"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Phone Number"
+                required
+              />
+            </div>
+            <div className="flex-1">
+              <label className="block mb-1 font-medium">Parent/Guardian Name</label>
+              <input
+                type="text"
+                name="guardian"
+                value={formData.guardian}
+                onChange={handleChange}
+                className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+                placeholder="Guardian Name"
+                required
+              />
+            </div>
+          </div>
+
+          {/* Row 5: Address (full row) */}
+          <div>
+            <label className="block mb-1 font-medium">Address</label>
+            <input
+              type="text"
+              name="address"
+              value={formData.address}
+              onChange={handleChange}
+              className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:ring-2 focus:ring-green-400"
+              placeholder="Address"
+              required
+            />
+          </div>
 
           <button
             type="submit"
             disabled={loading}
-            className={`w-full bg-green-600 text-white py-2 hover:bg-blue-700 ${loading ? "opacity-50 cursor-not-allowed" : ""}`}
+            className={`w-full bg-green-600 text-white py-2 rounded hover:bg-green-700 ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
           >
-            {loading ? (editId ? "Updating..." : "Creating...") : (editId ? "Update User" : "Create Account")}
+            {loading ? "Registering..." : "Register Student"}
           </button>
 
+          <p className="mt-4 text-center text-sm text-gray-600">
+          Already have an account?{" "}
+          <a href="/" className="text-green-600 hover:underline">
+            Login here
+          </a>
+        </p>
         </form>
       </div>
-
-      {/* Users Table */}
-      <div className="w-11/12 md:w-3/4 lg:w-2/3 bg-white p-6 border border-gray-300">
-        <h2 className="text-xl font-bold mb-4 text-center">Registered Users</h2>
-        <div className="overflow-x-auto">
-          <table className="min-w-full border border-gray-300 text-left">
-            <thead className="bg-gray-200">
-              <tr>
-                <th className="px-4 py-2 border">ID</th>
-                <th className="px-4 py-2 border">Name</th>
-                <th className="px-4 py-2 border">Email</th>
-                <th className="px-4 py-2 border">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan="4" className="text-center py-4 border">
-                    No users yet
-                  </td>
-                </tr>
-              ) : (
-                users.map((user) => (
-                  <tr key={user.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-2 border">{user.id}</td>
-                    <td className="px-4 py-2 border">{user.name}</td>
-                    <td className="px-4 py-2 border">{user.email}</td>
-                    <td className="px-4 py-2 border flex gap-2">
-                      <button
-                        onClick={() => handleEdit(user)}
-                        className="bg-yellow-400 text-white px-2 py-1 hover:bg-yellow-500"
-                      >
-                        Edit
-                      </button>
-                      <button
-                        onClick={() => handleDelete(user.id)}
-                        className="bg-red-600 text-white px-2 py-1 hover:bg-red-700"
-                      >
-                        Delete
-                      </button>
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
     </div>
   );
 }

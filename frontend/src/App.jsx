@@ -3,7 +3,8 @@ import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 
 // Auth Pages (no layout)
 import Register from "./pages/Register";
-
+import Login from "./pages/Login";
+import UsersTable from "./pages/Home";
 
 export default function App() {
   
@@ -11,7 +12,10 @@ export default function App() {
     <Router>
       <Routes>
         {/* Public / Auth Routes (No Layout) */}
-        <Route path="/" element={<Register />} />
+        <Route path="/" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/dashboard" element={<UsersTable />} />
+
       </Routes>       
     </Router>
   );
